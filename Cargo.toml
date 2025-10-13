@@ -66,6 +66,7 @@ alloy-signer-gcp = { version = "0.8", path = "crates/signer-gcp", default-featur
 alloy-signer-ledger = { version = "0.8", path = "crates/signer-ledger", default-features = false }
 alloy-signer-local = { version = "0.8", path = "crates/signer-local", default-features = false }
 alloy-signer-trezor = { version = "0.8", path = "crates/signer-trezor", default-features = false }
+alloy-signer-sm = { version = "0.8", path = "crates/signer-sm", default-features = false }
 alloy-transport = { version = "0.8", path = "crates/transport", default-features = false }
 alloy-transport-http = { version = "0.8", path = "crates/transport-http", default-features = false }
 alloy-transport-ipc = { version = "0.8", path = "crates/transport-ipc", default-features = false }
@@ -113,8 +114,8 @@ tokio = "1"
 tokio-util = "0.7"
 tokio-stream = "0.1"
 rustls = { version = "0.23", default-features = false, features = [
-    "std",
-    "tls12",
+  "std",
+  "tls12",
 ] }
 tokio-test = "0.4"
 tokio-tungstenite = "0.24"
