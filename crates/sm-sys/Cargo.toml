@@ -9,9 +9,9 @@ homepage.workspace = true
 repository.workspace = true
 exclude.workspace = true
 
-[lib]
-name = "sm"
-path = "src/lib.rs"
+#[lib]
+#name = "sm"
+#path = "src/lib.rs"
 
 [dependencies]
 alloy-primitives.workspace = true

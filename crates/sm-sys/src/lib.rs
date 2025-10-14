@@ -21,6 +21,8 @@ pub mod dsa;
 /// hexadecimal.
 const ORDER_HEX: &str = "fffffffeffffffffffffffffffffffff7203df6b21c6052b53bbf40939d54123";
 
+/// SM3 cryptographic hash
+
 type Hash = sm3::digest::Output<sm3::Sm3>;
 
 /// SM2 elliptic curve.
@@ -46,6 +48,12 @@ pub type PublicKey = sm2::PublicKey;
 
 /// SM2 secret key: wrapper point for a secret scalar.
 pub type SecretKey = sm2::SecretKey;
+
+use alloy_primitives::B256;
+use sm3::{Digest, Sm3};
+pub fn hash_msg(msg: &[u8]) -> B256 {
+    B256::from_slice(Sm3::new().chain_update(msg).finalize().as_slice())
+}
 
 #[cfg(test)]
 mod tests {

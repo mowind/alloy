@@ -1,4 +1,6 @@
-use crate::{sm2_verify_signature, AffinePoint, EncodedPoint, Hash, PublicKey, Sm2};
+use crate::{
+    sm2_recover_pubkey, sm2_verify_signature, AffinePoint, EncodedPoint, Hash, PublicKey, Sm2,
+};
 use alloy_primitives::Signature;
 use elliptic_curve::sec1::ToEncodedPoint;
 use signature::{hazmat::PrehashVerifier, Error, Result, Verifier};
@@ -71,6 +73,32 @@ impl VerifyingKey {
     pub(crate) fn hash_msg(&self, msg: &[u8]) -> Hash {
         Sm3::new().chain_update(msg).finalize()
     }
+
+    /// Recover a [`VerifyingKey`] from the given `prehash` of a message, the
+    /// signature over that prehashed message, and a [`RecoveryId`]. Compared to
+    /// `recover_from_prehash`, this function skips verification with the
+    /// recovered key.
+    pub fn recover_from_prehash(prehash: &[u8], signature: &Signature) -> Result<Self> {
+        if signature.as_bytes().len() != 65 || prehash.len() != 32 {
+            return Err(Error::new());
+        }
+        unsafe {
+            let mut sig = signature.as_bytes();
+            if sig[64] >= 27 {
+                sig[64] = sig[64] - 27
+            }
+            let mut pubkey = [0u8; 65];
+            pubkey[0] = 4;
+            let result =
+                sm2_recover_pubkey(pubkey[1..].as_mut_ptr(), prehash.as_ptr(), sig.as_ptr());
+            if result == 0 {
+                Self::from_sec1_bytes(&pubkey)
+                    .map(|vk| vk.verify_prehash(prehash, signature).map(|_| Ok(vk))?)?
+            } else {
+                Err(Error::new())
+            }
+        }
+    }
 }
 
 //
@@ -125,5 +153,22 @@ impl From<&VerifyingKey> for PublicKey {
 impl ToEncodedPoint<Sm2> for VerifyingKey {
     fn to_encoded_point(&self, compress: bool) -> EncodedPoint {
         self.as_affine().to_encoded_point(compress)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use alloy_primitives::{hex, Signature};
+
+    #[test]
+    fn test_recover_pubkey() {
+        let sig: Signature = "92a56743436e2ad0b4979e14137527d2728f983a8e6e2e0a60aa7df164c6ae61bc70e60fd62fc9eb77cd313cb2709fee1f0e94962dbf6c8a5f39e79908c5c67900".parse().unwrap();
+        let hash = hex::decode_to_array::<_, 32>(
+            "becbbfaae6548b8bf0cfcad5a27183cd1be6093b1cceccc303d9c61d0a645268",
+        )
+        .unwrap();
+        let result = VerifyingKey::recover_from_prehash(&hash, &sig);
+        let _ = result.unwrap();
     }
 }

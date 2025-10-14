@@ -60,6 +60,7 @@ alloy-rpc-types-trace = { version = "0.8", path = "crates/rpc-types-trace", defa
 alloy-rpc-types-txpool = { version = "0.8", path = "crates/rpc-types-txpool", default-features = false }
 alloy-rpc-types = { version = "0.8", path = "crates/rpc-types", default-features = false }
 alloy-serde = { version = "0.8", path = "crates/serde", default-features = false }
+alloy-sm-sys = { version = "0.8", path = "crates/sm-sys", default-features = false }
 alloy-signer = { version = "0.8", path = "crates/signer", default-features = false }
 alloy-signer-aws = { version = "0.8", path = "crates/signer-aws", default-features = false }
 alloy-signer-gcp = { version = "0.8", path = "crates/signer-gcp", default-features = false }
