@@ -1,7 +1,7 @@
 use super::SmSignerError;
 use alloy_consensus::SignableTransaction;
-use alloy_network::{impl_into_wallet, TxSigner, TxSignerSync};
-use alloy_primitives::{hex, Address, ChainId, Signature, B256, B512};
+use alloy_network::{TxSigner, TxSignerSync};
+use alloy_primitives::{hex, Address, ChainId, PrimitiveSignature as Signature, B256, B512};
 use alloy_signer::{sign_transaction_with_chain_id, Result, Signer, SignerSync};
 use alloy_sm_sys::{
     dsa::{signature::hazmat::PrehashSigner, SigningKey, VerifyingKey},
@@ -270,8 +270,6 @@ impl TxSignerSync<Signature> for SmSigner {
         sign_transaction_with_chain_id!(self, tx, self.sign_hash_sync(&hash))
     }
 }
-
-impl_into_wallet!(SmSigner);
 
 #[cfg(test)]
 mod test {

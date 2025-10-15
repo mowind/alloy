@@ -9,7 +9,7 @@ use signature::{
     Error, KeypairRef, RandomizedSigner, Result, Signer,
 };
 
-use alloy_primitives::Signature;
+use alloy_primitives::PrimitiveSignature as Signature;
 
 /// SM2 secret key used for signing messages and producing signatures.
 ///
@@ -153,7 +153,7 @@ pub(crate) fn sign_prehash_ffi(secret_scalar: &Scalar, prehash: &[u8]) -> Result
         let privkey = secret_scalar.to_bytes();
         let result = sm2_sign(sig.as_mut_ptr(), prehash.as_ptr(), privkey.as_ptr());
         if result == 0 {
-            Signature::from_raw_array(&sig).map_err(|_| Error::new())
+            Ok(Signature::try_from(sig.as_slice()).map_err(|_| Error::new())?)
         } else {
             Err(Error::new())
         }

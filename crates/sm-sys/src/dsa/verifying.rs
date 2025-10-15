@@ -1,7 +1,7 @@
 use crate::{
     sm2_recover_pubkey, sm2_verify_signature, AffinePoint, EncodedPoint, Hash, PublicKey, Sm2,
 };
-use alloy_primitives::Signature;
+use alloy_primitives::PrimitiveSignature as Signature;
 use elliptic_curve::sec1::ToEncodedPoint;
 use signature::{hazmat::PrehashVerifier, Error, Result, Verifier};
 use sm3::{digest::Digest, Sm3};
@@ -159,7 +159,7 @@ impl ToEncodedPoint<Sm2> for VerifyingKey {
 #[cfg(test)]
 mod test {
     use super::*;
-    use alloy_primitives::{hex, Signature};
+    use alloy_primitives::{hex, PrimitiveSignature as Signature};
 
     #[test]
     fn test_recover_pubkey() {
