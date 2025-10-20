@@ -12,9 +12,10 @@ exclude.workspace = true
 [dependencies]
 alloy-consensus = { workspace = true, features = ["std"] }
 alloy-network.workspace = true
-alloy-primitives.workspace = true
+alloy-primitives = { workspace = true, features = ["sm"] }
 alloy-signer.workspace = true
-alloy-sm-sys.workspace = true
+
+sm-sys.workspace = true
 
 thiserror.workspace = true
 elliptic-curve = { workspace = true }

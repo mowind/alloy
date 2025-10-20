@@ -1,18 +1,19 @@
+#[allow(deprecated)]
+
 use super::SmSignerError;
 use alloy_consensus::SignableTransaction;
 use alloy_network::{TxSigner, TxSignerSync};
-use alloy_primitives::{hex, Address, ChainId, PrimitiveSignature as Signature, B256, B512};
+use alloy_primitives::{hex, Address, ChainId, B256, B512, PrimitiveSignature as Signature, keccak256};
 use alloy_signer::{sign_transaction_with_chain_id, Result, Signer, SignerSync};
-use alloy_sm_sys::{
+use sm_sys::{
     dsa::{signature::hazmat::PrehashSigner, SigningKey, VerifyingKey},
-    hash_msg, FieldBytes, SecretKey as SmSecretKey,
+    FieldBytes, SecretKey as SmSecretKey,
 };
 use async_trait::async_trait;
 use elliptic_curve::sec1::ToEncodedPoint;
 use k256::ecdsa;
 use rand::{CryptoRng, Rng};
-use std::str::FromStr;
-
+    use std::str::FromStr;
 use std::fmt;
 
 #[cfg(feature = "keystore")]
@@ -20,12 +21,12 @@ use std::path::Path;
 
 /// Converts an SM2 private key to its corresponding Ethereum Address.
 #[inline]
-fn secret_key_to_address(secret_key: &SigningKey) -> Address {
+pub fn secret_key_to_address(secret_key: &SigningKey) -> Address {
     public_key_to_address(secret_key.verifying_key())
 }
 
 /// Converts an SM2 public key to its corresponding Ethereum Address.
-fn public_key_to_address(pubkey: &VerifyingKey) -> Address {
+pub fn public_key_to_address(pubkey: &VerifyingKey) -> Address {
     let affine = pubkey.as_ref();
     let encoded = affine.to_encoded_point(false);
     raw_public_key_to_address(&encoded.as_bytes()[1..])
@@ -44,9 +45,9 @@ fn public_key_to_address(pubkey: &VerifyingKey) -> Address {
 /// This function panics if the input is not **exactly** 64 bytes.
 #[inline]
 #[track_caller]
-fn raw_public_key_to_address(pubkey: &[u8]) -> Address {
+pub fn raw_public_key_to_address(pubkey: &[u8]) -> Address {
     assert_eq!(pubkey.len(), 64, "raw public key must be 64 bytes");
-    let digest = hash_msg(pubkey);
+    let digest = keccak256(pubkey);
     Address::from_slice(&digest[12..])
 }
 
@@ -230,7 +231,9 @@ impl Signer for SmSigner {
 impl SignerSync for SmSigner {
     #[inline]
     fn sign_hash_sync(&self, hash: &B256) -> Result<Signature> {
-        Ok(self.signing_key.sign_prehash(hash.as_ref())?.into())
+        let sig = self.signing_key.sign_prehash(hash.as_ref())?;
+        let bytes  = sig.to_bytes();
+        Ok(Signature::from_bytes_and_parity(&bytes[..64], bytes[64] == 1))
     }
 
     #[inline]
@@ -251,7 +254,7 @@ impl TxSigner<Signature> for SmSigner {
         &self,
         tx: &mut dyn SignableTransaction<Signature>,
     ) -> alloy_signer::Result<Signature> {
-        let hash = hash_msg(tx.encoded_for_signing().as_slice());
+        let hash = keccak256(tx.encoded_for_signing().as_slice());
         sign_transaction_with_chain_id!(self, tx, self.sign_hash_sync(&hash))
     }
 }
@@ -266,7 +269,7 @@ impl TxSignerSync<Signature> for SmSigner {
         &self,
         tx: &mut dyn SignableTransaction<Signature>,
     ) -> alloy_signer::Result<Signature> {
-        let hash = hash_msg(tx.encoded_for_signing().as_slice());
+        let hash = keccak256(tx.encoded_for_signing().as_slice());
         sign_transaction_with_chain_id!(self, tx, self.sign_hash_sync(&hash))
     }
 }
@@ -275,7 +278,10 @@ impl TxSignerSync<Signature> for SmSigner {
 mod test {
     use super::*;
     use alloy_consensus::TxLegacy;
-    use alloy_primitives::{address, U256};
+    use alloy_primitives::hex::FromHex;
+    use alloy_primitives::{keccak256, U256, address};
+    use sm_sys::dsa::{Signature as SmSignature};
+    use sm_sys::hash_msg;
 
     #[tokio::test]
     async fn signs_tx() {
@@ -300,9 +306,10 @@ mod test {
 
             let sig = signer.sign_transaction_sync(tx)?;
             let sighash = hash_msg(tx.encoded_for_signing().as_slice());
+            let sm_sig = SmSignature::from_bytes(&sig.as_bytes()).unwrap();
             assert_eq!(
                 public_key_to_address(
-                    &VerifyingKey::recover_from_prehash(sighash.as_slice(), &sig).unwrap()
+                    &VerifyingKey::recover_from_prehash(sighash.as_slice(), &sm_sig).unwrap()
                 ),
                 signer.address()
             );
@@ -322,16 +329,28 @@ mod test {
         let _ = sign_tx_test(&mut tx, None).await.unwrap();
     }
 
-    #[test]
-    fn parse_pk() {
-        let s = "003993f2c614021fa2e1e76b69c7f6c927d6a6475da22ad69ad39e00e9ca8d30";
-        let _pk: SmSigner = s.parse().unwrap();
-    }
+        #[test]
+        fn parse_pk() {
+            let s = "003993f2c614021fa2e1e76b69c7f6c927d6a6475da22ad69ad39e00e9ca8d30";
+            let _pk: SmSigner = s.parse().unwrap();
+
+            let private_key = B256::from_hex(s).unwrap();
+            let pk1 = SmSigner::from_bytes(&private_key).unwrap();
+            println!("addr: {:?}", pk1.address());
+            assert!(false);
+        }
 
     #[test]
     fn parse_short_key() {
         let s = "003993f2c614021fa2e1e76b69c7f6c927d6a6475da22ad69ad39e00e9ca8d3";
         assert!(s.len() < 64);
         let _pk = s.parse::<SmSigner>().unwrap_err();
+    }
+
+    #[test]
+    fn test_sm3_hash() {
+        let hash1 = B256::from_slice(hash_msg(b"hello").as_slice());
+        let hash2 = keccak256(b"hello");
+        assert_eq!(hash1, hash2);
     }
 }
