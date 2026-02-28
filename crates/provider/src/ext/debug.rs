@@ -363,6 +363,19 @@ pub trait DebugApi<N: Network = Ethereum>: Send + Sync {
     /// - [Reth implementation](https://github.com/paradigmxyz/reth/pull/19369)
     /// - [Geth schema](https://github.com/ethereum/go-ethereum/blob/737ffd1bf0cbee378d0111a5b17ae4724fb2216c/core/rawdb/schema.go#L29)
     async fn debug_db_get(&self, key: &str) -> TransportResult<Bytes>;
+    /// The `debug_consensusStatus` method returns the current CBFT consensus status of the node.
+    ///
+    /// This provides information about the node's consensus state in PlatON networks, including
+    /// the block tree, view state, and whether the node is a validator.
+    ///
+    /// # Note
+    ///
+    /// This is a PlatON-specific RPC method and is only available on PlatON nodes.
+    ///
+    /// # References
+    /// - [PlatON implementation](https://github.com/PlatONnetwork/PlatON-Go/blob/develop/consensus/cbft/api.go)
+    async fn debug_consensus_status(&self) -> TransportResult<alloy_rpc_types_debug::ConsensusStatus>;
+
 }
 
 #[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
@@ -574,6 +587,12 @@ where
 
     async fn debug_db_get(&self, key: &str) -> TransportResult<Bytes> {
         self.client().request("debug_dbGet", (key,)).await
+    async fn debug_consensus_status(
+        &self,
+    ) -> TransportResult<alloy_rpc_types_debug::ConsensusStatus> {
+        self.client().request_noparams("debug_consensusStatus").await
+    }
+
     }
 }
 
