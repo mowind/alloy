@@ -86,19 +86,18 @@ pub struct QuorumCert {
 
 /// View state in CBFT consensus.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
 pub struct ViewState {
     /// Current view information.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "view")]
     pub view: Option<View>,
     /// Highest QC block.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "highestQCBlock")]
     pub highest_qc_block: Option<HashNumber>,
     /// Highest locked block.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "highestLockBlock")]
     pub highest_lock_block: Option<HashNumber>,
     /// Highest committed block.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "highestCommitBlock")]
     pub highest_commit_block: Option<HashNumber>,
 }
 
