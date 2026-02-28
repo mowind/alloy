@@ -10,6 +10,9 @@
 extern crate alloc;
 
 mod execution_witness;
+
+mod cbft_status;
+pub use cbft_status::*;
 mod state_dump;
 mod storage_range;
 
