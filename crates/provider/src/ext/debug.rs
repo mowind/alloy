@@ -587,13 +587,14 @@ where
 
     async fn debug_db_get(&self, key: &str) -> TransportResult<Bytes> {
         self.client().request("debug_dbGet", (key,)).await
+    }
+
     async fn debug_consensus_status(
         &self,
     ) -> TransportResult<alloy_rpc_types_debug::ConsensusStatus> {
         self.client().request_noparams("debug_consensusStatus").await
     }
 
-    }
 }
 
 #[cfg(test)]
